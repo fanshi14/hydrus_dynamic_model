@@ -139,6 +139,11 @@ for k = 1:10
     end
 end
 
+%% save mid result
+% save('hydrus_mid_result.mat', 'D', 'C');
+%% load mid result
+% load('hydrus_mid_result.mat');
+
 %% calculate g
 syms U
 U = 0;
