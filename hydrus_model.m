@@ -31,23 +31,20 @@ link_end_pos_local_vec = sym(zeros(3, 4));
 link_center_pos_local_vec(1, 1) = link_length / 2.0;
 link_end_pos_local_vec(1, 1) = link_length;
 %% todo: currently only consider one dof in every joint
-rot1 = [cos(q0) -sin(q0) 0; sin(q0) cos(q0) 0; 0 0 1];
-rot2 = [cos(q0+q1) -sin(q0+q1) 0; sin(q0+q1) cos(q0+q1) 0; 0 0 1];
-rot3 = [cos(q0+q1+q2) -sin(q0+q1+q2) 0; sin(q0+q1+q2) cos(q0+q1+q2) ...
+syms R_li_b
+R_li_b = sym(zeros(3, 3, 4));
+R_li_b(:, :, 1) = sym(eye(3));
+R_li_b(:, :, 2) = [cos(q0) -sin(q0) 0; sin(q0) cos(q0) 0; 0 0 1];
+R_li_b(:, :, 3) = [cos(q0+q1) -sin(q0+q1) 0; sin(q0+q1) cos(q0+q1) 0; 0 0 1];
+R_li_b(:, :, 4) = [cos(q0+q1+q2) -sin(q0+q1+q2) 0; sin(q0+q1+q2) cos(q0+q1+q2) ...
         0; 0 0 1];
 %% FK
-link_center_pos_local_vec(:, 2) = link_end_pos_local_vec(:, 1) + ...
-    rot1 * [link_length/2.0; 0; 0];
-link_end_pos_local_vec(:, 2) = link_end_pos_local_vec(:, 1) + ...
-    rot1 * [link_length; 0; 0];
-link_center_pos_local_vec(:, 3) = link_end_pos_local_vec(:, 2) + ...
-    rot2 * [link_length/2.0; 0; 0];
-link_end_pos_local_vec(:, 3) = link_end_pos_local_vec(:, 2) + ...
-    rot2 *[link_length; 0; 0];
-link_center_pos_local_vec(:, 4) = link_end_pos_local_vec(:, 3) + ...
-    rot3 * [link_length/2.0; 0; 0];
-link_end_pos_local_vec(:, 4) = link_end_pos_local_vec(:, 3) + ...
-    rot3 * [link_length; 0; 0];
+for i = 2:4
+    link_center_pos_local_vec(:, i) = link_end_pos_local_vec(:, i-1) + ...
+        R_li_b(:, :, i) * [link_length/2.0; 0; 0];
+    link_end_pos_local_vec(:, i) = link_end_pos_local_vec(:, i-1) + ...
+        R_li_b(:, :, i) * [link_length; 0; 0];
+end
 %% Jacobian
 syms Jacobian_P
 Jacobian_P = sym(zeros(3, 4, 4));
