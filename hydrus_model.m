@@ -73,6 +73,7 @@ for i = 1:4
     end
 end
 
+%% calculate D
 for i = 1:3
     D11(i, i) = sum_weight;
 end
@@ -126,6 +127,7 @@ syms d_px d_py d_pz d_er d_ep d_ey d_q0 d_q1 d_q2 d_q3 %% d_q0 = 0
 d_q_vec = [d_px; d_py; d_pz; d_er; d_ep; d_ey; d_q0; d_q1; d_q2; d_q3];
 syms C
 C = sym(zeros(10, 10));
+%% calculate C
 for k = 1:10
     for j = 1:10
         for i = 1:10
@@ -135,4 +137,18 @@ for k = 1:10
                       * 0.5 * d_q_vec(i);
         end
     end
+end
+
+%% calculate g
+syms U
+U = 0;
+for i = 1:4
+    U = U + link_weight_vec(i) * 9.78 * ((R_local * [0;0;1]).')...
+        * ([px; py; pz] + R_local * link_center_pos_local_vec(:, i));
+end
+
+syms g
+g = sym(zeros(10, 1));
+for i = 1:10
+    g(i) = diff(U, q_vec(i));
 end
