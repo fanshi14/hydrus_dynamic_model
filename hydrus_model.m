@@ -1,6 +1,6 @@
 syms link_weight_vec sum_weight n_links link_length D R_local T_local
 syms link_weight_1 link_weight_2 link_weight_3 link_weight_4
-syms px py pz er ep ey q0 q1 q2
+syms px py pz er ep ey q0 q1 q2 q3 %% q0 = 0
 syms D11 D12 D13 D22 D23 D33
 D = sym(zeros(10, 10));
 D11 = sym(zeros(3, 3));
@@ -42,9 +42,9 @@ link_end_pos_local_vec(1, 1) = link_length;
 syms R_li_b
 R_li_b = sym(zeros(3, 3, 4));
 R_li_b(:, :, 1) = sym(eye(3));
-R_li_b(:, :, 2) = [cos(q0) -sin(q0) 0; sin(q0) cos(q0) 0; 0 0 1];
-R_li_b(:, :, 3) = [cos(q0+q1) -sin(q0+q1) 0; sin(q0+q1) cos(q0+q1) 0; 0 0 1];
-R_li_b(:, :, 4) = [cos(q0+q1+q2) -sin(q0+q1+q2) 0; sin(q0+q1+q2) cos(q0+q1+q2) ...
+R_li_b(:, :, 2) = [cos(q1) -sin(q1) 0; sin(q1) cos(q1) 0; 0 0 1];
+R_li_b(:, :, 3) = [cos(q1+q2) -sin(q1+q2) 0; sin(q1+q2) cos(q1+q2) 0; 0 0 1];
+R_li_b(:, :, 4) = [cos(q1+q2+q3) -sin(q1+q2+q3) 0; sin(q1+q2+q3) cos(q1+q2+q3) ...
         0; 0 0 1];
 %% FK
 for i = 2:4
@@ -119,3 +119,20 @@ D(4:6, 4:6) = D22;
 D(4:6, 7:10) = D23;
 D(7:10, 4:6) = (D23.');
 D(7:10, 7:10) = D33;
+
+syms q_vec d_q_vec
+q_vec = [px; py; pz; er; ep; ey; q0; q1; q2; q3];
+syms d_px d_py d_pz d_er d_ep d_ey d_q0 d_q1 d_q2 d_q3 %% d_q0 = 0
+d_q_vec = [d_px; d_py; d_pz; d_er; d_ep; d_ey; d_q0; d_q1; d_q2; d_q3];
+syms C
+C = sym(zeros(10, 10));
+for k = 1:10
+    for j = 1:10
+        for i = 1:10
+            C(k, j) = C(k, j) + (diff(D(k, j), q_vec(i)) + ...
+                                 diff(D(k, i), q_vec(j)) - ...
+                                 diff(D(i, j), q_vec(k))) ...
+                      * 0.5 * d_q_vec(i);
+        end
+    end
+end
