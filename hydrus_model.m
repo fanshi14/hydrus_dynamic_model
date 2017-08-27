@@ -11,6 +11,14 @@ D23 = sym(zeros(3, 4));
 D33 = sym(zeros(4, 4));
 link_weight_vec = [link_weight_1; link_weight_2; link_weight_3; link_weight_4];
 
+syms H_inertial
+H_inertial = sym(zeros(3, 3, 4));
+for i = 1:4
+    H_inertial(1, 1, i) = 0.0001;
+    H_inertial(2, 2, i) = 0.0001;
+    H_inertial(3, 3, i) = 0.0002;
+end
+
 R_local = sym(zeros(3, 3));
 T_local = sym(zeros(3, 3));
 R_local = [cos(ey) -sin(ey) 0; sin(ey) cos(ey) 0; 0 0 1] * ...
@@ -46,8 +54,9 @@ for i = 2:4
         R_li_b(:, :, i) * [link_length; 0; 0];
 end
 %% Jacobian
-syms Jacobian_P
+syms Jacobian_P Jacobian_W
 Jacobian_P = sym(zeros(3, 4, 4));
+Jacobian_W = sym(zeros(3, 4, 4));
 for i = 1:4
     %% todo: currently only consider one dof in every joint
     z_axis = sym([0; 0; 1]);
@@ -60,6 +69,7 @@ for i = 1:4
                 link_end_pos_local_vec(:, j-1);
         end
         Jacobian_P(:, j, i) = cross(z_axis, dist_to_end);
+        Jacobian_W(:, j, i) = z_axis;
     end
 end
 
@@ -75,4 +85,27 @@ end
 
 for i = 1:4
     D13 = D13 + link_weight_vec(i) * R_local * Jacobian_P(:, :, i);
+end
+
+for i = 1:4
+    p_bli = R_local * link_center_pos_local_vec(:, i);
+    S_p_bli = S_operation(p_bli(1), p_bli(2), p_bli(3));
+    D22 = D22 + link_weight_vec(i) * (T_local.') * (S_p_bli.') * ...
+          S_p_bli * T_local + (T_local.') * R_local * R_li_b(:, :, i) * ...
+          H_inertial(:, :, i) * (R_li_b(:, :, i).') * (R_local.') * T_local;
+end
+
+for i = 1:4
+    p_bli = R_local * link_center_pos_local_vec(:, i);
+    S_p_bli = S_operation(p_bli(1), p_bli(2), p_bli(3));
+    D23 = D23 + (T_local.') * R_local * R_li_b(:, :, i) * H_inertial(:, :, i) * ...
+          (R_li_b(:, :, i).') * Jacobian_W(:, :, i)...
+    - link_weight_vec(i) * (T_local.') * (S_p_bli.') * R_local * ...
+        Jacobian_W(:, :, i);
+end
+
+for i = 1:4
+    D33 = D33 + link_weight_vec(i) * (Jacobian_P(:, :, i).') * Jacobian_P(:, :, i) ...
+          + (Jacobian_W(:, :, i).') * R_li_b(:, :, i) * H_inertial(:, :, i) ...
+          * (R_li_b(:, :, i).') * Jacobian_W(:, :, i);
 end
