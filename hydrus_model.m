@@ -81,6 +81,8 @@ for i = 1:4
     end
 end
 
+Jacobian_P = simplify(Jacobian_P); %% simplify matrix
+
 %% calculate D
 if not(load_mid_result_flag)
     for i = 1:3
@@ -92,6 +94,7 @@ if not(load_mid_result_flag)
         S_p_bli = S_operation(p_bli(1), p_bli(2), p_bli(3));
         D12 = D12 - link_weight_vec(i) * S_p_bli * T_local;
     end
+    D12 = simplify(D12); %% simplify matrix
 
     for i = 1:4
         D13 = D13 + link_weight_vec(i) * R_local * Jacobian_P(:, :, i);
@@ -104,6 +107,7 @@ if not(load_mid_result_flag)
               S_p_bli * T_local + (T_local.') * R_local * R_li_b(:, :, i) * ...
               H_inertial(:, :, i) * (R_li_b(:, :, i).') * (R_local.') * T_local;
     end
+    D22 = simplify(D22); %% simplify matrix
 
     for i = 1:4
         p_bli = R_local * link_center_pos_local_vec(:, i);
@@ -113,12 +117,14 @@ if not(load_mid_result_flag)
               - link_weight_vec(i) * (T_local.') * (S_p_bli.') * R_local * ...
               Jacobian_W(:, :, i);
     end
+    D23 = simplify(D23); %% simplify matrix
 
     for i = 1:4
         D33 = D33 + link_weight_vec(i) * (Jacobian_P(:, :, i).') * Jacobian_P(:, :, i) ...
               + (Jacobian_W(:, :, i).') * R_li_b(:, :, i) * H_inertial(:, :, i) ...
               * (R_li_b(:, :, i).') * Jacobian_W(:, :, i);
     end
+    D33 = simplify(D33); %% simplify matrix
 
     D(1:3, 1:3) = D11;
     D(1:3, 4:6) = D12;
@@ -129,6 +135,7 @@ if not(load_mid_result_flag)
     D(4:6, 7:10) = D23;
     D(7:10, 4:6) = (D23.');
     D(7:10, 7:10) = D33;
+    disp('D is generated.');
 end
 
 syms q_vec d_q_vec
@@ -149,42 +156,32 @@ if not(load_mid_result_flag)
             end
         end
     end
-end
-
-%% load mid result
-if (load_mid_result_flag)
-    load('hydrus_mid_result.mat');
-%% save mid result
-else
-    save('hydrus_mid_result.mat', 'D', 'C');
-end
-
-%% calculate g
-syms U
-U = 0;
-for i = 1:4
-    U = U + link_weight_vec(i) * 9.78 * ((R_local * [0;0;1]).')...
-        * ([px; py; pz] + R_local * link_center_pos_local_vec(:, i));
+    %C = simplify(C); %% simplify matrix
+    disp('C is generated.');
 end
 
 syms g
-g = sym(zeros(10, 1));
-for i = 1:10
-    g(i) = diff(U, q_vec(i));
+%% calculate g
+if not(load_mid_result_flag)
+    syms U
+    U = 0;
+    for i = 1:4
+        U = U + link_weight_vec(i) * 9.78 * ((R_local * [0;0;1]).')...
+            * ([px; py; pz] + R_local * link_center_pos_local_vec(:, i));
+    end
+    U = simplify(U); %% simplify matrix
+
+    g = sym(zeros(10, 1));
+    for i = 1:10
+        g(i) = diff(U, q_vec(i));
+    end
+    g = simplify(g); %% simplify matrix
+    disp('g is generated.');
 end
 
 syms B B1 B2
-B = sym(zeros(10, 8));
-B1 = sym(zeros(10, 10));
-B2 = sym(zeros(10, 1));
 syms f1 f2 f3 f4 tau0 tau1 tau2 tau3
 syms u
-u = [f1; f2; f3; f4; tau0; tau1; tau2; tau3];
-%% calculate B (B is the funciton of B(u))
-B1(1:3, 1:3) = R_local;
-B1(4:6, 4:6) = (T_local.') * R_local;
-B1(7:10, 7:10) = sym(eye(4));
-B2(7:10, 1) = u(5:8, 1);
 syms P_cog_local
 P_cog_local = sym(zeros(3, 1));
 for i = 1:4
@@ -193,19 +190,43 @@ for i = 1:4
 end
 P_cog_local = P_cog_local / sum_weight;
 
-syms momentum_local
-momentum_local = sym(zeros(3, 1));
-for i = 1:4
-    momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]);
-    %% calculatr gravity momentum by every link
-    % momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]) ...
-    %     + cross(link_center_pos_local_vec(:, i), (R_local.')*[0; 0; -link_weight_vec(i) * 9.78]);
-end
-momentum_local = momentum_local + cross(P_cog_local, (R_local.')*[0; 0; -sum_weight * 9.78]);
+%% calculate B (B is the funciton of B(u))
+if not(load_mid_result_flag)
+    B = sym(zeros(10, 8));
+    B1 = sym(zeros(10, 10));
+    B2 = sym(zeros(10, 1));
+    u = [f1; f2; f3; f4; tau0; tau1; tau2; tau3];
+    B1(1:3, 1:3) = R_local;
+    B1(4:6, 4:6) = (T_local.') * R_local;
+    B1(7:10, 7:10) = sym(eye(4));
+    B2(7:10, 1) = u(5:8, 1);
 
-B2(4:6, 1) = momentum_local;
-B2(1:3, 1) = R_local * [0; 0; f1 + f2 + f3 + f4];
-B = B1 * B2;
+    syms momentum_local
+    momentum_local = sym(zeros(3, 1));
+    for i = 1:4
+        momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]);
+        %% calculatr gravity momentum by every link
+        % momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]) ...
+        %     + cross(link_center_pos_local_vec(:, i), (R_local.')*[0; 0; -link_weight_vec(i) * 9.78]);
+    end
+    momentum_local = momentum_local + cross(P_cog_local, (R_local.')*[0; 0; -sum_weight * 9.78]);
+
+    B2(4:6, 1) = momentum_local;
+    B2(1:3, 1) = R_local * [0; 0; f1 + f2 + f3 + f4];
+    B = B1 * B2;
+    B = simplify(B); %% simplify matrix
+    disp('B is generated.');
+end
+
+%% load mid result
+if load_mid_result_flag
+    load('hydrus_mid_result.mat');
+    disp('D, C, g, B is loaded.')
+%% save mid result
+else
+    save('hydrus_mid_result.mat', 'D', 'C', 'g', 'B');
+    disp('D, C, g, B data is saved.');
+end
 
 %% D * s'' + C * s' + g = B
 
@@ -217,3 +238,6 @@ us_vec = [f1; f2; f3; f4];
 syms A
 A = sym(zeros(12, 12));
 A(1:6, 7:12) = eye(6);
+
+
+disp('Finished.');
