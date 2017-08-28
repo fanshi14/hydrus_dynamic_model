@@ -1,14 +1,14 @@
 syms link_weight_vec sum_weight n_links link_length D R_local T_local
 syms link_weight_1 link_weight_2 link_weight_3 link_weight_4
-syms px py pz er ep ey q0 q1 q2 q3 %% q0 = 0
+syms px py pz er ep ey q1 q2 q3
 syms D11 D12 D13 D22 D23 D33
-D = sym(zeros(10, 10));
+D = sym(zeros(9, 9));
 D11 = sym(zeros(3, 3));
 D12 = sym(zeros(3, 3));
-D13 = sym(zeros(3, 4));
+D13 = sym(zeros(3, 3));
 D22 = sym(zeros(3, 3));
-D23 = sym(zeros(3, 4));
-D33 = sym(zeros(4, 4));
+D23 = sym(zeros(3, 3));
+D33 = sym(zeros(3, 3));
 link_weight_vec = [link_weight_1; link_weight_2; link_weight_3; link_weight_4];
 sum_weight = link_weight_1 + link_weight_2 + link_weight_3 + link_weight_4;
 %% debug
@@ -82,6 +82,9 @@ for i = 1:4
 end
 
 Jacobian_P = simplify(Jacobian_P); %% simplify matrix
+%% There is no joint before root link
+Jacobian_P = Jacobian_P(:, 2:4, :);
+Jacobian_W = Jacobian_W(:, 2:4, :);
 
 %% calculate D
 if not(load_mid_result_flag)
@@ -115,7 +118,7 @@ if not(load_mid_result_flag)
         D23 = D23 + (T_local.') * R_local * R_li_b(:, :, i) * H_inertial(:, :, i) * ...
               (R_li_b(:, :, i).') * Jacobian_W(:, :, i)...
               - link_weight_vec(i) * (T_local.') * (S_p_bli.') * R_local * ...
-              Jacobian_W(:, :, i);
+              Jacobian_P(:, :, i);
     end
     D23 = simplify(D23); %% simplify matrix
 
@@ -129,26 +132,26 @@ if not(load_mid_result_flag)
     D(1:3, 1:3) = D11;
     D(1:3, 4:6) = D12;
     D(4:6, 1:3) = (D12.');
-    D(1:3, 7:10) = D13;
-    D(7:10, 1:3) = (D13.');
+    D(1:3, 7:9) = D13;
+    D(7:9, 1:3) = (D13.');
     D(4:6, 4:6) = D22;
-    D(4:6, 7:10) = D23;
-    D(7:10, 4:6) = (D23.');
-    D(7:10, 7:10) = D33;
+    D(4:6, 7:9) = D23;
+    D(7:9, 4:6) = (D23.');
+    D(7:9, 7:9) = D33;
     disp('D is generated.');
 end
 
 syms q_vec d_q_vec
-q_vec = [px; py; pz; er; ep; ey; q0; q1; q2; q3];
-syms d_px d_py d_pz d_er d_ep d_ey d_q0 d_q1 d_q2 d_q3 %% d_q0 = 0
-d_q_vec = [d_px; d_py; d_pz; d_er; d_ep; d_ey; d_q0; d_q1; d_q2; d_q3];
+q_vec = [px; py; pz; er; ep; ey; q1; q2; q3];
+syms d_px d_py d_pz d_er d_ep d_ey d_q1 d_q2 d_q3
+d_q_vec = [d_px; d_py; d_pz; d_er; d_ep; d_ey; d_q1; d_q2; d_q3];
 syms C
-C = sym(zeros(10, 10));
+C = sym(zeros(9, 9));
 %% calculate C
 if not(load_mid_result_flag)
-    for k = 1:10
-        for j = 1:10
-            for i = 1:10
+    for k = 1:9
+        for j = 1:9
+            for i = 1:9
                 C(k, j) = C(k, j) + (diff(D(k, j), q_vec(i)) + ...
                                      diff(D(k, i), q_vec(j)) - ...
                                      diff(D(i, j), q_vec(k))) ...
@@ -171,8 +174,8 @@ if not(load_mid_result_flag)
     end
     U = simplify(U); %% simplify matrix
 
-    g = sym(zeros(10, 1));
-    for i = 1:10
+    g = sym(zeros(9, 1));
+    for i = 1:9
         g(i) = diff(U, q_vec(i));
     end
     g = simplify(g); %% simplify matrix
@@ -180,9 +183,9 @@ if not(load_mid_result_flag)
 end
 
 syms B B1 B2
-syms f1 f2 f3 f4 tau0 tau1 tau2 tau3
+syms f1 f2 f3 f4 tau1 tau2 tau3
 syms u
-u = [f1; f2; f3; f4; tau0; tau1; tau2; tau3];
+u = [f1; f2; f3; f4; tau1; tau2; tau3];
 syms P_cog_local
 P_cog_local = sym(zeros(3, 1));
 for i = 1:4
@@ -193,13 +196,13 @@ P_cog_local = P_cog_local / sum_weight;
 
 %% calculate B (B is the funciton of B(u))
 if not(load_mid_result_flag)
-    B = sym(zeros(10, 8));
-    B1 = sym(zeros(10, 10));
-    B2 = sym(zeros(10, 1));
+    B = sym(zeros(9, 1));
+    B1 = sym(zeros(9, 9));
+    B2 = sym(zeros(9, 1));
     B1(1:3, 1:3) = R_local;
     B1(4:6, 4:6) = (T_local.') * R_local;
-    B1(7:10, 7:10) = sym(eye(4));
-    B2(7:10, 1) = u(5:8, 1);
+    B1(7:9, 7:9) = sym(eye(3));
+    B2(7:9, 1) = u(5:7, 1);
 
     syms momentum_local
     momentum_local = sym(zeros(3, 1));
