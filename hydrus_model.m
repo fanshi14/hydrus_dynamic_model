@@ -71,7 +71,7 @@ for i = 1:4
     dist_to_end = sym(zeros(3, 1));
     for j = 1:i
         if j == 1
-            dist_to_end = link_center_pos_local_vec(:, 1);
+            dist_to_end = link_center_pos_local_vec(:, i);
         else
             dist_to_end = link_center_pos_local_vec(:, i) - ...
                 link_end_pos_local_vec(:, j-1);
