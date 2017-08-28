@@ -196,9 +196,13 @@ P_cog_local = P_cog_local / sum_weight;
 syms momentum_local
 momentum_local = sym(zeros(3, 1));
 for i = 1:4
-    momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]) ...
-        + cross(link_center_pos_local_vec(:, i), (R_local.')*[0; 0; -link_weight_vec(i)]);
+    momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]);
+    %% calculatr gravity momentum by every link
+    % momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]) ...
+    %     + cross(link_center_pos_local_vec(:, i), (R_local.')*[0; 0; -link_weight_vec(i) * 9.78]);
 end
+momentum_local = momentum_local + cross(P_cog_local, (R_local.')*[0; 0; -sum_weight * 9.78]);
+
 B2(4:6, 1) = momentum_local;
 B2(1:3, 1) = R_local * [0; 0; f1 + f2 + f3 + f4];
 B = B1 * B2;
