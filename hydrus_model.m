@@ -10,7 +10,7 @@ D22 = sym(zeros(3, 3));
 D23 = sym(zeros(3, 4));
 D33 = sym(zeros(4, 4));
 link_weight_vec = [link_weight_1; link_weight_2; link_weight_3; link_weight_4];
-
+sum_weight = link_weight_1 + link_weight_2 + link_weight_3 + link_weight_4;
 %% debug
 load_mid_result_flag = true;
 if load_mid_result_flag
@@ -151,11 +151,12 @@ if not(load_mid_result_flag)
     end
 end
 
-%% save mid result
-% save('hydrus_mid_result.mat', 'D', 'C');
 %% load mid result
 if (load_mid_result_flag)
     load('hydrus_mid_result.mat');
+%% save mid result
+else
+    save('hydrus_mid_result.mat', 'D', 'C');
 end
 
 %% calculate g
@@ -171,3 +172,35 @@ g = sym(zeros(10, 1));
 for i = 1:10
     g(i) = diff(U, q_vec(i));
 end
+
+syms B B1 B2
+B = sym(zeros(10, 8));
+B1 = sym(zeros(10, 10));
+B2 = sym(zeros(10, 1));
+syms f1 f2 f3 f4 tau0 tau1 tau2 tau3
+syms u
+u = [f1; f2; f3; f4; tau0; tau1; tau2; tau3];
+%% calculate B (B is the funciton of B(u))
+B1(1:3, 1:3) = R_local;
+B1(4:6, 4:6) = (T_local.') * R_local;
+B1(7:10, 7:10) = sym(eye(4));
+B2(7:10, 1) = u(5:8, 1);
+syms P_cog_local
+P_cog_local = sym(zeros(3, 1));
+for i = 1:4
+    P_cog_local = P_cog_local + link_weight_vec(i) * ...
+        link_center_pos_local_vec(:, i);
+end
+P_cog_local = P_cog_local / sum_weight;
+
+syms momentum_local
+momentum_local = sym(zeros(3, 1));
+for i = 1:4
+    momentum_local = momentum_local + cross(link_center_pos_local_vec(:, i), [0; 0; f1]) ...
+        + cross(link_center_pos_local_vec(:, i), (R_local.')*[0; 0; -link_weight_vec(i)]);
+end
+B2(4:6, 1) = momentum_local;
+B2(1:3, 1) = R_local * [0; 0; f1 + f2 + f3 + f4];
+B = B1 * B2;
+
+%% D * s'' + C * s' + g = B
