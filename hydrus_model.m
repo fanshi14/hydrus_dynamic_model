@@ -208,3 +208,12 @@ B2(1:3, 1) = R_local * [0; 0; f1 + f2 + f3 + f4];
 B = B1 * B2;
 
 %% D * s'' + C * s' + g = B
+
+%% simplified state and control input
+syms qs_vec us_vec
+qs_vec = [px; py; pz; er; ep; ey; ...
+          d_px; d_py; d_pz; d_er; d_ep; d_ey];
+us_vec = [f1; f2; f3; f4];
+syms A
+A = sym(zeros(12, 12));
+A(1:6, 7:12) = eye(6);
