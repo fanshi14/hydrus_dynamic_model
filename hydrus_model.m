@@ -182,6 +182,7 @@ end
 syms B B1 B2
 syms f1 f2 f3 f4 tau0 tau1 tau2 tau3
 syms u
+u = [f1; f2; f3; f4; tau0; tau1; tau2; tau3];
 syms P_cog_local
 P_cog_local = sym(zeros(3, 1));
 for i = 1:4
@@ -195,7 +196,6 @@ if not(load_mid_result_flag)
     B = sym(zeros(10, 8));
     B1 = sym(zeros(10, 10));
     B2 = sym(zeros(10, 1));
-    u = [f1; f2; f3; f4; tau0; tau1; tau2; tau3];
     B1(1:3, 1:3) = R_local;
     B1(4:6, 4:6) = (T_local.') * R_local;
     B1(7:10, 7:10) = sym(eye(4));
