@@ -15,6 +15,7 @@ syms D_origin
 D_origin = sym(zeros(9, 9));
 %% debug
 load_mid_result_flag = true;
+load_simplify_C_mid_result_flag = true;
 if load_mid_result_flag
     disp('Load mid reuslt.')
 else
@@ -245,6 +246,14 @@ else
     disp('D, C, g, B data is saved.');
 end
 
+%% load simplify C
+syms C1
+if load_simplify_C_mid_result_flag
+    load('hydrus_mid_result_simple_C.mat');
+    C = C1;
+    disp('load simplify C mid result.');
+end
+
 %% D * s'' + C * s' + g = B
 
 %% simplified state and control input
@@ -287,6 +296,238 @@ end
 for i = 1:4
     Bs_u(:, :, i) = diff(Bs, us_vec(i));
 end
+
+
+
+%% save Ds Ds3 C Cs3 Csds gs Bs ...
+%%      Ds_x Bs_x Bs_u Csds_x Csds_dx gs_x Ds3_x Cs3_x Cs3_dx
+fid = fopen('hrdrus_matrix_Ds.txt', 'wt');
+var = Ds; %Ds
+[row, col] = size(var);
+fprintf(fid, '\n\n\n Ds, size: %d * %d\n', row, col);
+for i = 1:row
+    for j = 1:col
+        fprintf(fid, '%s\n\n', ccode(var(i,j)));
+    end
+    fprintf(fid, '\n\n');
+end
+fclose(fid);
+disp('Ds output is finished.');
+
+fid = fopen('hrdrus_matrix_Ds3.txt', 'wt');
+var = Ds3; %Ds3
+[row, col] = size(var);
+fprintf(fid, '\n\n\n Ds3, size: %d * %d\n', row, col);
+for i = 1:row
+    for j = 1:col
+        fprintf(fid, '%s\n\n', ccode(var(i,j)));
+    end
+    fprintf(fid, '\n\n');
+end
+fclose(fid);
+disp('Ds3 output is finished.');
+
+fid = fopen('hrdrus_matrix_C.txt', 'wt');
+var = C; %C
+[row, col] = size(var);
+fprintf(fid, '\n\n\n C, size: %d * %d\n', row, col);
+for i = 1:row
+    for j = 1:col
+        fprintf(fid, '%s\n\n', ccode(var(i,j)));
+    end
+    fprintf(fid, '\n\n');
+end
+fclose(fid);
+disp('C output is finished.');
+
+fid = fopen('hrdrus_matrix_Cs3.txt', 'wt');
+var = Cs3; %Cs3
+[row, col] = size(var);
+fprintf(fid, '\n\n\n Cs3, size: %d * %d\n', row, col);
+for i = 1:row
+    for j = 1:col
+        fprintf(fid, '%s\n\n', ccode(var(i,j)));
+    end
+    fprintf(fid, '\n\n');
+end
+fclose(fid);
+disp('Cs3 output is finished.');
+
+fid = fopen('hrdrus_matrix_Csds.txt', 'wt');
+var = Csds; %Csds
+[row, col] = size(var);
+fprintf(fid, '\n\n\n Csds, size: %d * %d\n', row, col);
+for i = 1:row
+    for j = 1:col
+        fprintf(fid, '%s\n\n', ccode(var(i,j)));
+    end
+    fprintf(fid, '\n\n');
+end
+fclose(fid);
+disp('Csds output is finished.');
+
+fid = fopen('hrdrus_matrix_gs.txt', 'wt');
+var = gs; %gs
+[row, col] = size(var);
+fprintf(fid, '\n\n\n gs, size: %d * %d\n', row, col);
+for i = 1:row
+    for j = 1:col
+        fprintf(fid, '%s\n\n', ccode(var(i,j)));
+    end
+    fprintf(fid, '\n\n');
+end
+fclose(fid);
+disp('gs output is finished.');
+
+fid = fopen('hrdrus_matrix_Bs.txt', 'wt');
+var = Bs; %Bs
+[row, col] = size(var);
+fprintf(fid, '\n\n\n Bs, size: %d * %d\n', row, col);
+for i = 1:row
+    for j = 1:col
+        fprintf(fid, '%s\n\n', ccode(var(i,j)));
+    end
+    fprintf(fid, '\n\n');
+end
+fclose(fid);
+disp('Bs output is finished.');
+
+
+fid = fopen('hrdrus_matrix_Ds_x.txt', 'wt');
+var = Ds_x; %Ds_x
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Ds_x:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Ds_x output is finished.');
+
+fid = fopen('hrdrus_matrix_Bs_x.txt', 'wt');
+var = Bs_x; %Bs_x
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Bs_x:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Bs_x output is finished.');
+
+fid = fopen('hrdrus_matrix_Bs_u.txt', 'wt');
+var = Bs_u; %Bs_u
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Bs_u:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Bs_u output is finished.');
+
+fid = fopen('hrdrus_matrix_Csds_x.txt', 'wt');
+var = Csds_x; %Csds_x
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Csds_x:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Csds_x output is finished.');
+
+fid = fopen('hrdrus_matrix_Csds_dx.txt', 'wt');
+var = Csds_dx; %Csds_dx
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Csds_dx:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Csds_dx output is finished.');
+
+fid = fopen('hrdrus_matrix_gs_x.txt', 'wt');
+var = gs_x; %gs_x
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n gs_x:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('gs_x output is finished.');
+
+fid = fopen('hrdrus_matrix_Ds3_x.txt', 'wt');
+var = Ds3_x; %Ds3_x
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Ds3_x:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Ds3_x output is finished.');
+
+fid = fopen('hrdrus_matrix_Cs3_x.txt', 'wt');
+var = Cs3_x; %Cs3_x
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Cs3_x:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Cs3_x output is finished.');
+
+fid = fopen('hrdrus_matrix_Cs3_dx.txt', 'wt');
+var = Cs3_dx; %Cs3_dx
+[row, col, num] = size(var);
+for k = 1:num
+    fprintf(fid, '\n\n\n Cs3_dx:[%d], size: %d * %d\n', num, row, col);
+    for i = 1:row
+        for j = 1:col
+            fprintf(fid, '%s\n\n', ccode(var(i,j, num)));
+        end
+        fprintf(fid, '\n\n');
+    end
+end
+fclose(fid);
+disp('Cs3_dx output is finished.');
+
 
 disp('finish time:')
 disp(datestr(now))
