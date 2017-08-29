@@ -19,9 +19,9 @@ if load_mid_result_flag
     disp('Load mid reuslt.')
 else
     disp('Do NOT load mid reuslt.')
-    disp('start time:')
-    disp(datestr(now))
 end
+disp('start time:')
+disp(datestr(now))
 
 syms H_inertial
 H_inertial = sym(zeros(3, 3, 4));
@@ -258,6 +258,35 @@ Cs = C(1:6, 1:6);
 gs = g(1:6, 1);
 Bs = B(1:6, 1);
 
+syms Csds Ds3 Cs3
+Csds = Cs * qs_vec(7:12, 1);
+Ds3 = D(1:6, 7:9);
+Cs3 = C(1:6, 7:9);
+syms Ds_x Bs_x Bs_u Csds_x Csds_dx gs_x Ds3_x Cs3_x Cs3_dx
+Ds_x = sym(zeros(6, 6, 6));
+Bs_x = sym(zeros(6, 1, 6));
+Bs_u = sym(zeros(6, 1, 4));
+Csds_x = sym(zeros(6, 1, 6));
+Csds_dx = sym(zeros(6, 1, 6));
+gs_x = sym(zeros(6, 1, 6));
+Ds3_x = sym(zeros(6, 3, 6));
+Cs3_x = sym(zeros(6, 3, 6));
+Cs3_dx = sym(zeros(6, 3, 6));
+
+for i = 1:6
+    Ds_x(:, :, i) = diff(Ds, qs_vec(i));
+    Bs_x(:, :, i) = diff(Bs, qs_vec(i));
+    Csds_x(:, :, i) = diff(Csds, qs_vec(i));
+    Csds_dx(:, :, i) = diff(Csds, qs_vec(i+6));
+    gs_x(:, :, i) = diff(gs, qs_vec(i));
+    Ds3_x(:, :, i) = diff(Ds3, qs_vec(i));
+    Cs3_x(:, :, i) = diff(Cs3, qs_vec(i));
+    Cs3_dx(:, :, i) = diff(Cs3, qs_vec(i+6));
+end
+
+for i = 1:4
+    Bs_u(:, :, i) = diff(Bs, us_vec(i));
+end
 
 disp('finish time:')
 disp(datestr(now))
