@@ -11,12 +11,16 @@ D23 = sym(zeros(3, 3));
 D33 = sym(zeros(3, 3));
 link_weight_vec = [link_weight_1; link_weight_2; link_weight_3; link_weight_4];
 sum_weight = link_weight_1 + link_weight_2 + link_weight_3 + link_weight_4;
+syms D_origin
+D_origin = sym(zeros(9, 9));
 %% debug
 load_mid_result_flag = true;
 if load_mid_result_flag
     disp('Load mid reuslt.')
 else
     disp('Do NOT load mid reuslt.')
+    disp('start time:')
+    disp(datestr(now))
 end
 
 syms H_inertial
@@ -91,17 +95,28 @@ if not(load_mid_result_flag)
     for i = 1:3
         D11(i, i) = sum_weight;
     end
+    D_origin(1:3, 1:3) = D11;
+    D(1:3, 1:3) = D11;
 
     for i = 1:4
         p_bli = R_local * link_center_pos_local_vec(:, i);
         S_p_bli = S_operation(p_bli(1), p_bli(2), p_bli(3));
         D12 = D12 - link_weight_vec(i) * S_p_bli * T_local;
     end
+    D_origin(1:3, 4:6) = D12;
+    D_origin(4:6, 1:3) = (D12.');
     D12 = simplify(D12); %% simplify matrix
+    D(1:3, 4:6) = D12;
+    D(4:6, 1:3) = (D12.');
 
     for i = 1:4
         D13 = D13 + link_weight_vec(i) * R_local * Jacobian_P(:, :, i);
     end
+    D_origin(1:3, 7:9) = D13;
+    D_origin(7:9, 1:3) = (D13.');
+    D13 = simplify(D13); %% simplify matrix
+    D(1:3, 7:9) = D13;
+    D(7:9, 1:3) = (D13.');
 
     for i = 1:4
         p_bli = R_local * link_center_pos_local_vec(:, i);
@@ -110,7 +125,9 @@ if not(load_mid_result_flag)
               S_p_bli * T_local + (T_local.') * R_local * R_li_b(:, :, i) * ...
               H_inertial(:, :, i) * (R_li_b(:, :, i).') * (R_local.') * T_local;
     end
+    D_origin(4:6, 4:6) = D22;
     D22 = simplify(D22); %% simplify matrix
+    D(4:6, 4:6) = D22;
 
     for i = 1:4
         p_bli = R_local * link_center_pos_local_vec(:, i);
@@ -120,24 +137,21 @@ if not(load_mid_result_flag)
               - link_weight_vec(i) * (T_local.') * (S_p_bli.') * R_local * ...
               Jacobian_P(:, :, i);
     end
+    D_origin(4:6, 7:9) = D23;
+    D_origin(7:9, 4:6) = (D23.');
     D23 = simplify(D23); %% simplify matrix
+    D(4:6, 7:9) = D23;
+    D(7:9, 4:6) = (D23.');
 
     for i = 1:4
         D33 = D33 + link_weight_vec(i) * (Jacobian_P(:, :, i).') * Jacobian_P(:, :, i) ...
               + (Jacobian_W(:, :, i).') * R_li_b(:, :, i) * H_inertial(:, :, i) ...
               * (R_li_b(:, :, i).') * Jacobian_W(:, :, i);
     end
+    D_origin(7:9, 7:9) = D33;
     D33 = simplify(D33); %% simplify matrix
-
-    D(1:3, 1:3) = D11;
-    D(1:3, 4:6) = D12;
-    D(4:6, 1:3) = (D12.');
-    D(1:3, 7:9) = D13;
-    D(7:9, 1:3) = (D13.');
-    D(4:6, 4:6) = D22;
-    D(4:6, 7:9) = D23;
-    D(7:9, 4:6) = (D23.');
     D(7:9, 7:9) = D33;
+
     disp('D is generated.');
 end
 
@@ -227,7 +241,7 @@ if load_mid_result_flag
     disp('D, C, g, B is loaded.')
 %% save mid result
 else
-    save('hydrus_mid_result.mat', 'D', 'C', 'g', 'B');
+    save('hydrus_mid_result.mat', 'D', 'D_origin', 'C', 'g', 'B');
     disp('D, C, g, B data is saved.');
 end
 
@@ -238,9 +252,13 @@ syms qs_vec us_vec
 qs_vec = [px; py; pz; er; ep; ey; ...
           d_px; d_py; d_pz; d_er; d_ep; d_ey];
 us_vec = [f1; f2; f3; f4];
-syms A
-A = sym(zeros(12, 12));
-A(1:6, 7:12) = eye(6);
+syms Ds Cs gs Bs
+Ds = D(1:6, 1:6);
+Cs = C(1:6, 1:6);
+gs = g(1:6, 1);
+Bs = B(1:6, 1);
 
 
+disp('finish time:')
+disp(datestr(now))
 disp('Finished.');
