@@ -162,20 +162,29 @@ syms d_px d_py d_pz d_er d_ep d_ey d_q1 d_q2 d_q3
 d_q_vec = [d_px; d_py; d_pz; d_er; d_ep; d_ey; d_q1; d_q2; d_q3];
 syms C
 C = sym(zeros(9, 9));
-%% calculate C
-if not(load_mid_result_flag)
-    for k = 1:9
-        for j = 1:9
-            for i = 1:9
-                C(k, j) = C(k, j) + (diff(D(k, j), q_vec(i)) + ...
-                                     diff(D(k, i), q_vec(j)) - ...
-                                     diff(D(i, j), q_vec(k))) ...
-                          * 0.5 * d_q_vec(i);
+
+%% load simplify C
+syms C1
+if load_simplify_C_mid_result_flag
+    load('hydrus_mid_result_simple_C.mat');
+    C = C1;
+    disp('load simplify C mid result.');
+    %% calculate C
+else
+    if not(load_mid_result_flag)
+        for k = 1:9
+            for j = 1:9
+                for i = 1:9
+                    C(k, j) = C(k, j) + (diff(D(k, j), q_vec(i)) + ...
+                                         diff(D(k, i), q_vec(j)) - ...
+                                         diff(D(i, j), q_vec(k))) ...
+                              * 0.5 * d_q_vec(i);
+                end
             end
         end
+        %C = simplify(C); %% simplify matrix
+        disp('C is generated.');
     end
-    %C = simplify(C); %% simplify matrix
-    disp('C is generated.');
 end
 
 syms g
@@ -240,14 +249,6 @@ if load_mid_result_flag
 else
     save('hydrus_mid_result.mat', 'D', 'D_origin', 'C', 'g', 'B');
     disp('D, C, g, B data is saved.');
-end
-
-%% load simplify C
-syms C1
-if load_simplify_C_mid_result_flag
-    load('hydrus_mid_result_simple_C.mat');
-    C = C1;
-    disp('load simplify C mid result.');
 end
 
 %% D * s'' + C * s' + g = B
