@@ -184,7 +184,7 @@ if not(load_mid_result_flag)
     syms U
     U = 0;
     for i = 1:4
-        U = U + link_weight_vec(i) * 9.78 * ((R_local * [0;0;1]).')...
+        U = U + link_weight_vec(i) * 9.78 *  ([0;0;1].') ...
             * ([px; py; pz] + R_local * link_center_pos_local_vec(:, i));
     end
     U = simplify(U); %% simplify matrix
